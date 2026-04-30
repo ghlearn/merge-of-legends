@@ -43,44 +43,18 @@ jobs:
           issue-number: ${{ inputs['issue-number'] }}
           body: ${{ steps.build-task.outputs.rendered-text }}
 
-      - name: Build comment - show question 1
-        id: build-question-1
+      - name: Build comment - show diagram challenge
+        id: build-diagram
         uses: ./.github/actions/render-markdown-template
         with:
-          template-file: .github/steps/2-3-copilot-quiz-1.md
+          template-file: .github/steps/2-3-copilot-diagram.md
           repo-image-base-url: ${{ env.REPO_IMAGE_BASE_URL }}
 
-      - name: Add comment - show question 1
+      - name: Add comment - show diagram challenge
         uses: GrantBirki/comment@v2.1.1
         with:
           issue-number: ${{ inputs['issue-number'] }}
-          body: ${{ steps.build-question-1.outputs.rendered-text }}
-
-      - name: Build comment - show question 2
-        id: build-question-2
-        uses: ./.github/actions/render-markdown-template
-        with:
-          template-file: .github/steps/2-3-copilot-quiz-2.md
-          repo-image-base-url: ${{ env.REPO_IMAGE_BASE_URL }}
-
-      - name: Add comment - show question 2
-        uses: GrantBirki/comment@v2.1.1
-        with:
-          issue-number: ${{ inputs['issue-number'] }}
-          body: ${{ steps.build-question-2.outputs.rendered-text }}
-
-      - name: Build comment - show question 3
-        id: build-question-3
-        uses: ./.github/actions/render-markdown-template
-        with:
-          template-file: .github/steps/2-3-copilot-quiz-3.md
-          repo-image-base-url: ${{ env.REPO_IMAGE_BASE_URL }}
-
-      - name: Add comment - show question 3
-        uses: GrantBirki/comment@v2.1.1
-        with:
-          issue-number: ${{ inputs['issue-number'] }}
-          body: ${{ steps.build-question-3.outputs.rendered-text }}
+          body: ${{ steps.build-diagram.outputs.rendered-text }}
 
       - name: Disable current workflow and enable next workflow
         run: |

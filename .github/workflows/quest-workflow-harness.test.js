@@ -231,19 +231,9 @@ assertWorkflowUsesRenderer(".github/workflows/2-1-copilot-start.yml", [
     bodyReference: "body: ${{ steps.build-task.outputs.rendered-text }}",
   },
   {
-    buildStepId: "build-question-1",
-    templateFile: ".github/steps/2-3-copilot-quiz-1.md",
-    bodyReference: "body: ${{ steps.build-question-1.outputs.rendered-text }}",
-  },
-  {
-    buildStepId: "build-question-2",
-    templateFile: ".github/steps/2-3-copilot-quiz-2.md",
-    bodyReference: "body: ${{ steps.build-question-2.outputs.rendered-text }}",
-  },
-  {
-    buildStepId: "build-question-3",
-    templateFile: ".github/steps/2-3-copilot-quiz-3.md",
-    bodyReference: "body: ${{ steps.build-question-3.outputs.rendered-text }}",
+    buildStepId: "build-diagram",
+    templateFile: ".github/steps/2-3-copilot-diagram.md",
+    bodyReference: "body: ${{ steps.build-diagram.outputs.rendered-text }}",
   },
 ]);
 
@@ -260,6 +250,21 @@ assertWorkflowUsesRenderer(".github/workflows/2-2-copilot-check.yml", [
   },
 ]);
 assertQuestCompletionFlow(".github/workflows/2-2-copilot-check.yml", "Disable current workflow");
+
+// Copilot check workflow must use the mermaid validator and look for the diagram comment
+const copilotCheckWorkflow = readRepoFile(".github/workflows/2-2-copilot-check.yml");
+assert.ok(
+  copilotCheckWorkflow.includes("check-copilot-mermaid"),
+  "2-2-copilot-check.yml must require the check-copilot-mermaid module"
+);
+assert.ok(
+  copilotCheckWorkflow.includes("Restore the SDLC Flow"),
+  "2-2-copilot-check.yml must search for the diagram comment by its header"
+);
+assert.ok(
+  copilotCheckWorkflow.includes("checkSdlcDiagram"),
+  "2-2-copilot-check.yml must call checkSdlcDiagram"
+);
 
 assertWorkflowUsesRenderer(".github/workflows/3-1-ducky-start.yml", [
   {
