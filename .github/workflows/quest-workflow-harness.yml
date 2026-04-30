@@ -22,4 +22,5 @@ jobs:
           node .github/workflows/quest-issue-utils.test.js
           node .github/workflows/check-date-order.test.js
           node .github/workflows/check-ducky-image-mod.test.js
+          node .github/workflows/check-copilot-mermaid.test.js
           node .github/workflows/quest-workflow-harness.test.js

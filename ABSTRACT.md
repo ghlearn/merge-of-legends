@@ -10,7 +10,7 @@ In this 5-minute mini-game, participants become the lead developer in Codia, a w
 
 - **🐤 Ducky** (Beginner) - Match the Lore: Challenges players to uncover six cards into three matching image pairs to earn the Bubbles of Clarity
 - **:octocat: Mona** (Intermediate) - Guardian of the Archives: Explores branching and merging strategies, granting the Fork of Curiosity
-- **:copilot: Copilot** (Advanced) - GH-600 Trivia Sprint: Engages players with quick certification-focused questions about Developing in Agentic AI Systems, bestowing the Goggles of Insight
+- **:copilot: Copilot** (Advanced) - SDLC Mermaid Sprint: Challenges players to restore a scrambled Software Development Life Cycle flowchart by fixing the Mermaid diagram connections, bestowing the Goggles of Insight
 
 ## Interactive Quest Mechanics
 

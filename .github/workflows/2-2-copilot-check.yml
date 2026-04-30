@@ -29,233 +29,61 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Get question 1
-        id: get-question-1
+      - name: Get diagram comment
+        id: get-diagram
         uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ env.ISSUE_NUMBER }}
-          body-includes: "## 1."
+          body-includes: "Restore the SDLC Flow"
           direction: last
 
-      - name: Check question 1
-        id: check-question-1
+      - name: Check diagram
+        id: check-diagram
         continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
-            const { getCheckboxes, getCheckedValue, disableCheckboxes, resetCheckboxes, removeAlerts } = require("./.github/workflows/actions-utils");
+            const { checkSdlcDiagram, findMissingConnections, extractMermaidBlock, parseConnections } = require("./.github/workflows/check-copilot-mermaid");
+            const { removeAlerts } = require("./.github/workflows/actions-utils");
 
-            // Get the updated issue body from the event payload
             let commentBody = process.env.COMMENT_BODY;
 
-            // Get the checkboxes and value
-            const checkboxes = getCheckboxes(commentBody);
-            const checked_item_value = getCheckedValue(checkboxes);
-            const checked_item_value_normalized = checked_item_value ? checked_item_value.trim().toLowerCase() : "";
-
-            // If no checkboxes or no values, end early
-            if (checkboxes.length > 0 && !checked_item_value) {
-              core.setFailed('Question 1 - Waiting for answer');
-              return;
-            } else if (checkboxes.length === 0) {
-              // Finished already. Nothing to do
+            // If no comment found, end early
+            if (!commentBody) {
+              core.setFailed('Diagram comment not found yet.');
               return;
             }
 
-            // Determine if the answer is correct
-            let is_correct = (checked_item_value_normalized === "6");
+            const is_correct = checkSdlcDiagram(commentBody);
 
-            // Remove any existing alerts
+            // Remove any existing alerts before adding new feedback
             commentBody = removeAlerts(commentBody);
 
-            // Add feedback based on correctness
             if (is_correct) {
-              // Disable checkboxes to prevent further changes
-              commentBody = disableCheckboxes(commentBody);
-
-              // Add feedback
-              commentBody += `\n\n
-            > [!TIP]
-            > ✅ Correct! GH-600 includes 6 domains. :copilot:
-            `;
+              core.info('SDLC diagram is correct!');
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: parseInt(process.env.COMMENT_ID),
+                body: commentBody + `\n\n> [!TIP]\n> ✅ The SDLC flow is correct! Well done. :copilot:\n`
+              });
             } else {
-              // Reset checkboxes to unchecked state
-              commentBody = resetCheckboxes(commentBody);
-
-              // Add feedback
-              commentBody += `\n\n
-            > [!Caution]
-            > ❌ Not quite. The correct answer is 6.
-            `;
-
-              // Fail the workflow step
-              core.setFailed('Question 1 is incorrect.');
+              const mermaidBlock = extractMermaidBlock(commentBody);
+              const connections = mermaidBlock ? parseConnections(mermaidBlock) : [];
+              const missing = findMissingConnections(connections);
+              const missingList = missing.map(([f, t]) => `\`${f} --> ${t}\``).join(", ");
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: parseInt(process.env.COMMENT_ID),
+                body: commentBody + `\n\n> [!Caution]\n> ❌ Not quite yet. Missing connections: ${missingList}\n`
+              });
+              core.setFailed('SDLC diagram is not correct. Please fix the connections.');
             }
-
-            // Use GitHub API to update the comment
-            await github.rest.issues.updateComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: parseInt(process.env.COMMENT_ID),
-              body: commentBody
-            });
 
         env:
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          COMMENT_ID: ${{ steps.get-question-1.outputs.comment-id }}
-          COMMENT_BODY: ${{ steps.get-question-1.outputs.comment-body }}
-
-      - name: Get question 2
-        id: get-question-2
-        uses: peter-evans/find-comment@v3
-        with:
-          issue-number: ${{ env.ISSUE_NUMBER }}
-          body-includes: "## 2."
-          direction: last
-
-      - name: Check question 2
-        id: check-question-2
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { getCheckboxes, getCheckedValue, disableCheckboxes, resetCheckboxes, removeAlerts } = require("./.github/workflows/actions-utils");
-
-            // Get the updated issue body from the event payload
-            let commentBody = process.env.COMMENT_BODY;
-
-            // Get the checkboxes and value
-            const checkboxes = getCheckboxes(commentBody);
-            const checked_item_value = getCheckedValue(checkboxes);
-            const checked_item_value_normalized = checked_item_value ? checked_item_value.trim().toLowerCase() : "";
-
-            // If no checkboxes or no values, end early
-            if (checkboxes.length > 0 && !checked_item_value) {
-              core.setFailed('Question 2 - Waiting for answer');
-              return;
-            } else if (checkboxes.length === 0) {
-              // Finished already. Nothing to do
-              return;
-            }
-
-            // Determine if the answer is correct
-            let is_correct = (checked_item_value_normalized === "software development life cycle");
-
-            // Remove any existing alerts
-            commentBody = removeAlerts(commentBody);
-
-            // Add feedback based on correctness
-            if (is_correct) {
-              // Disable checkboxes to prevent further changes
-              commentBody = disableCheckboxes(commentBody);
-
-              // Add feedback
-              commentBody += `\n\n
-            > [!TIP]
-            > ✅ Exactly. SDLC stands for Software Development Life Cycle. :copilot:
-            `;
-            } else {
-              // Reset checkboxes to unchecked state
-              commentBody = resetCheckboxes(commentBody);
-
-              // Add feedback
-              commentBody += `\n\n
-            > [!Caution]
-            > ❌ Not quite. SDLC means Software Development Life Cycle.
-            `;
-
-              // Fail the workflow step
-              core.setFailed('Question 2 is incorrect.');
-            }
-
-            // Use GitHub API to update the comment
-            await github.rest.issues.updateComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: parseInt(process.env.COMMENT_ID),
-              body: commentBody
-            });
-
-        env:
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          COMMENT_ID: ${{ steps.get-question-2.outputs.comment-id }}
-          COMMENT_BODY: ${{ steps.get-question-2.outputs.comment-body }}
-
-      - name: Get question 3
-        id: get-question-3
-        uses: peter-evans/find-comment@v3
-        with:
-          issue-number: ${{ env.ISSUE_NUMBER }}
-          body-includes: "## 3."
-          direction: last
-
-      - name: Check question 3
-        id: check-question-3
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { getCheckboxes, getCheckedValue, disableCheckboxes, resetCheckboxes, removeAlerts } = require("./.github/workflows/actions-utils");
-
-            // Get the updated issue body from the event payload
-            let commentBody = process.env.COMMENT_BODY;
-
-            // Get the checkboxes and value
-            const checkboxes = getCheckboxes(commentBody);
-            const checked_item_value = getCheckedValue(checkboxes);
-            const checked_item_value_normalized = checked_item_value ? checked_item_value.trim().toLowerCase() : "";
-
-            // If no checkboxes or no values, end early
-            if (checkboxes.length > 0 && !checked_item_value) {
-              core.setFailed('Question 3 - Waiting for answer');
-              return;
-            } else if (checkboxes.length === 0) {
-              // Finished already. Nothing to do
-              return;
-            }
-
-            // Determine if the answer is correct
-            let is_correct = (checked_item_value_normalized === "true");
-
-            // Remove any existing alerts
-            commentBody = removeAlerts(commentBody);
-
-            // Add feedback based on correctness
-            if (is_correct) {
-              // Disable checkboxes to prevent further changes
-              commentBody = disableCheckboxes(commentBody);
-
-              // Add feedback
-              commentBody += `\n\n
-            > [!TIP]
-            > ✅ Correct. MCP servers are part of what you should understand for GH-600. :copilot:
-            `;
-            } else {
-              // Reset checkboxes to unchecked state
-              commentBody = resetCheckboxes(commentBody);
-
-              // Add feedback
-              commentBody += `\n\n
-            > [!Caution]
-            > ❌ Not quite. The correct answer is True.
-            `;
-
-              // Fail the workflow step
-              core.setFailed('Question 3 is incorrect.');
-            }
-
-            // Use GitHub API to update the comment
-            await github.rest.issues.updateComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: parseInt(process.env.COMMENT_ID),
-              body: commentBody
-            });
-
-        env:
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          COMMENT_ID: ${{ steps.get-question-3.outputs.comment-id }}
-          COMMENT_BODY: ${{ steps.get-question-3.outputs.comment-body }}
+          COMMENT_ID: ${{ steps.get-diagram.outputs.comment-id }}
+          COMMENT_BODY: ${{ steps.get-diagram.outputs.comment-body }}
 
       - name: Verify all checks passed
         id: verify-checks
