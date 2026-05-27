@@ -2,7 +2,7 @@ name: 0 Bootstrap README
 
 # One-shot README bootstrap. Runs only on direct `push` events to the
 # default branch and only on cloned template repos (never on the
-# source template `skills-dev/merge-of-legends`). Kept in its own
+# source template `ghlearn/merge-of-legends`). Kept in its own
 # workflow file (rather than a job inside 0-0-start.yml) so its
 # `contents: write` permission does not have to be granted by every
 # caller of the reusable 0-0-start workflow — the check workflows
@@ -24,7 +24,7 @@ jobs:
   update_readme:
     name: Bootstrap README from start-game template
     runs-on: ubuntu-latest
-    if: ${{ github.repository != 'skills-dev/merge-of-legends' }}
+    if: ${{ github.repository != 'ghlearn/merge-of-legends' }}
 
     steps:
       - name: Checkout
@@ -77,7 +77,7 @@ jobs:
             // bootstrap (or any manual edit that removes the marker) this
             // step is a no-op, so legitimate README changes in cloned
             // repos are never overwritten.
-            const TEMPLATE_MARKER = 'template_owner=skills-dev&template_name=merge-of-legends';
+            const TEMPLATE_MARKER = 'template_owner=ghlearn&template_name=merge-of-legends';
             if (!currentContent.includes(TEMPLATE_MARKER)) {
               core.info('README no longer contains template-source marker; skipping bootstrap.');
               return;

@@ -10,7 +10,7 @@ const { resetCheckboxes } = require("./actions-utils");
 const { removeAlerts } = require("./actions-utils");
 
 // Manually run these tests in the CLI:
-// node /workspaces/repos/skills-dev/merge-of-legends/.github/workflows/actions-utils.test.js
+// node /workspaces/repos/ghlearn/merge-of-legends/.github/workflows/actions-utils.test.js
 
 // getCheckboxes: Empty
 (() => {

@@ -356,7 +356,7 @@ assertInOrder(
   bootstrapWorkflow,
   [
     "update_readme:",
-    "if: ${{ github.repository != 'skills-dev/merge-of-legends' }}",
+    "if: ${{ github.repository != 'ghlearn/merge-of-legends' }}",
     "uses: actions/checkout@v5",
     "id: render-readme",
     "uses: ./.github/actions/render-markdown-template",
@@ -368,7 +368,7 @@ assertInOrder(
     "RENDERED_README: ${{ steps.render-readme.outputs.rendered-text }}",
     "const path = 'README.md'",
     "github.rest.repos.getContent",
-    "TEMPLATE_MARKER = 'template_owner=skills-dev&template_name=merge-of-legends'",
+    "TEMPLATE_MARKER = 'template_owner=ghlearn&template_name=merge-of-legends'",
     "github.rest.repos.createOrUpdateFileContents",
     "docs: bootstrap README from start-game template",
   ],

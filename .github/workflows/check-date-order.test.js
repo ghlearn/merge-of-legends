@@ -2,7 +2,7 @@ const assert = require("assert");
 const { parseDatesFromText, isChronological, countNotAscending } = require("./check-date-order");
 
 // Manually run these tests in the CLI:
-// node /workspaces/repos/skills-dev/merge-of-legends/.github/workflows/check-date-order.test.js
+// node /workspaces/repos/ghlearn/merge-of-legends/.github/workflows/check-date-order.test.js
 
 function datesToYYYYMM(dates) {
   return dates.map((d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
