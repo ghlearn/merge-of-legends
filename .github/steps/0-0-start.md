@@ -8,7 +8,7 @@ But something’s gone wrong. A glitch in version control has caused everything 
 
 The engineering team checked with the top experts and figured out the only way to fix things: find three key resources that can help restore everything back to normal.
 
-- 🐤 **Ducky** – Path to Software Enlightenment
+<!-- - 🐤 **Ducky** – Path to Software Enlightenment -->
 - :octocat: **Mona** – Guardian of the Archives
 - :copilot: **Copilot** – Practice the Flow of Prompting
 
@@ -25,6 +25,6 @@ Select 1 challenge then wait a moment (max 15 seconds).
 > DO NOT CLICK **Create sub-issue**.
 > Only check one challenge box below.
 
-- [ ] Ducky - Beginner
-- [ ] Mona - Intermediate
-- [ ] Copilot - Advanced
+<!-- - [ ] Ducky - Beginner -->
+- [ ] Mona
+- [ ] Copilot

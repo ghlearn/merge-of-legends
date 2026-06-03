@@ -109,7 +109,7 @@ jobs:
   mona:
     name: 1 Mona
     needs: [get_selected_option]
-    if: needs.get_selected_option.outputs.checked-item-value == 'mona - intermediate'
+    if: needs.get_selected_option.outputs.checked-item-value == 'mona'
     uses: ./.github/workflows/1-1-mona-start.yml
     secrets: inherit
     with:
@@ -118,17 +118,17 @@ jobs:
   copilot:
     name: 2 Copilot
     needs: [get_selected_option]
-    if: needs.get_selected_option.outputs.checked-item-value == 'copilot - advanced'
+    if: needs.get_selected_option.outputs.checked-item-value == 'copilot'
     uses: ./.github/workflows/2-1-copilot-start.yml
     secrets: inherit
     with:
       issue-number: ${{ github.event.issue.number }}
 
-  ducky:
-    name: 3 Ducky
-    needs: [get_selected_option]
-    if: needs.get_selected_option.outputs.checked-item-value == 'ducky - beginner'
-    uses: ./.github/workflows/3-1-ducky-start.yml
-    secrets: inherit
-    with:
-      issue-number: ${{ github.event.issue.number }}
+  # ducky:
+  #   name: 3 Ducky
+  #   needs: [get_selected_option]
+  #   if: needs.get_selected_option.outputs.checked-item-value == 'ducky - beginner'
+  #   uses: ./.github/workflows/3-1-ducky-start.yml
+  #   secrets: inherit
+  #   with:
+  #     issue-number: ${{ github.event.issue.number }}
