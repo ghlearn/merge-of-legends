@@ -22,7 +22,7 @@ Each will grant you a magical gift. When united, they form the **Merge of Legend
 Select 1 challenge then wait a moment (max 15 seconds).
 
 > [!WARNING]
-> DO NOT CLICK **Create sub-issue**.
+> **DO NOT CLICK Create sub-issue**.
 > Only check one challenge box below.
 
 <!-- - [ ] Ducky - Beginner -->
