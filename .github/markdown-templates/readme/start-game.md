@@ -18,3 +18,6 @@ The game will automatically reset when a user finishes.
 2. A workflow ensures there is exactly one open quest issue and links it in a comment on the closed issue.
 3. A moderator navigates to the **Issues** tab and opens the new issue.
 4. The computer is assigned a new person to play the game.
+
+> [!TIP]
+> To switch characters for the next quest, post a comment with `/char mona`, `/char copilot`, or `/char ducky` before finishing the current issue.
