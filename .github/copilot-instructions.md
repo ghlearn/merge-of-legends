@@ -5,7 +5,9 @@ You are working on the Merge of Legends GitHub game. Preserve the quest engine a
 ## Core game model
 
 - The game maintains exactly one active quest issue at a time.
-- A player starts from the main quest issue, chooses one path, completes that path, and the game resets by creating or reusing the next open quest issue.
+- When a new quest issue is created, the character is chosen automatically (no player interaction needed to pick).
+- A player completes the quest assigned to them, and the game resets by creating the next quest issue.
+- Players can change the character for their next quest by posting `/char mona`, `/char copilot`, or `/char ducky` in the current issue's comments before it closes.
 - Finishing a quest must follow this sequence:
   1. success condition is met
   2. finish/tip comments are posted
@@ -20,24 +22,26 @@ Do not break these workflow interfaces unless explicitly asked:
 ### `0-0-start.yml`
 
 - Creates or reuses the main quest issue
+- Determines the next character automatically:
+  - Checks closed issue comments for a `/char <name>` command (last non-bot comment wins)
+  - Falls back to the `<!-- quest-character: <name> -->` tag embedded in the closed issue body
+  - Falls back to a random character if no context is available (first run)
+- Creates a character-specific issue (body includes `<!-- quest-character: <name> -->`)
+- After creating/finding the issue, calls the appropriate start workflow directly as a conditional job
 - Accepts reusable-workflow input:
   - `closed-issue-number`
 - Outputs:
   - `issue-url`
 - When invoked after quest completion, it must comment on the closed issue with the link to the next open issue
 
-### `0-bootstrap-readme.yml`
+### `0-1-pick.yml`
+
+_Removed._ Character selection is now fully automatic inside `0-0-start.yml`.
 
 - One-shot README bootstrap. Runs **only** on `push` to the default branch and **only** when `github.repository != 'ghlearn/merge-of-legends'`. On the first push after the template is copied to a new handle, it renders `.github/markdown-templates/readme/start-game.md` (vars: `game_title`, `issues_url` = repo issues tab URL, `login` = repository owner) through the shared `./.github/actions/render-markdown-template` action and publishes `README.md` via the GitHub Contents API. The publish step requires the current README to still contain the source-template `template_owner=ghlearn&template_name=merge-of-legends` "Copy Game" marker; once that marker is gone (after bootstrap or any manual edit) the step is a no-op, so legitimate README changes are never overwritten.
 - Lives in its own workflow (not as a job inside `0-0-start.yml`) so its `contents: write` permission does not have to be delegated by every caller of the reusable `0-0-start` workflow. Reusable-workflow permission validation happens at startup before `if:` evaluation, so the check workflows (`contents: read`) would otherwise fail with `startup_failure` when invoking `0-0-start` via `workflow_call`.
 
-### `0-1-pick.yml`
 
-- Reads the checked option from the main quest issue
-- Dispatches exactly one of the three start workflows:
-  - Mona
-  - Copilot
-  - Ducky
 
 ### Start workflows
 
@@ -110,8 +114,8 @@ All check workflows:
 
 Before considering a change complete, verify:
 
-- the selected path still starts correctly from `0-1-pick.yml`
 - the check workflow still detects success correctly
 - quest completion still closes the issue
 - `0-0-start.yml` still comments on the closed issue with the next issue link
+- the correct character start workflow is called after issue creation
 - the workflow harness and related JS tests still pass

@@ -149,7 +149,7 @@ for (const templateFile of stepMarkdownFiles) {
 assertWorkflowUsesRenderer(".github/workflows/0-0-start.yml", [
   {
     buildStepId: "build-issue-description",
-    templateFile: ".github/steps/0-0-start.md",
+    templateFile: ".github/steps/0-0-${{ steps.determine-character.outputs.character }}-start.md",
     bodyReference: "ISSUE_BODY: ${{ steps.build-issue-description.outputs.rendered-text }}",
   },
   {
@@ -166,6 +166,53 @@ assert.ok(
 );
 
 const startWorkflow = readRepoFile(".github/workflows/0-0-start.yml");
+
+// Character determination must appear before issue creation
+assertInOrder(
+  startWorkflow,
+  [
+    "name: Determine next character",
+    "id: determine-character",
+    "resolveNextCharacter",
+    "id: existing-open-issue",
+    "TARGET_CHARACTER",
+    "id: build-issue-description",
+    "id: create-issue",
+  ],
+  ".github/workflows/0-0-start.yml character determination flow"
+);
+
+// Conditional start workflow jobs must exist for all three characters
+assert.ok(
+  startWorkflow.includes("mona_start:"),
+  "0-0-start.yml must have a mona_start job"
+);
+assert.ok(
+  startWorkflow.includes("copilot_start:"),
+  "0-0-start.yml must have a copilot_start job"
+);
+assert.ok(
+  startWorkflow.includes("ducky_start:"),
+  "0-0-start.yml must have a ducky_start job"
+);
+
+// Each character start job must gate on character, should_run, and should_start_challenge
+for (const char of ["mona", "copilot", "ducky"]) {
+  assert.ok(
+    startWorkflow.includes(`outputs.character == '${char}'`),
+    `0-0-start.yml ${char}_start job must check character output`
+  );
+  assert.ok(
+    startWorkflow.includes(`uses: ./.github/workflows/${char === "mona" ? "1" : char === "copilot" ? "2" : "3"}-1-${char}-start.yml`),
+    `0-0-start.yml must call ${char} start workflow`
+  );
+}
+
+assert.ok(
+  startWorkflow.includes("should_start_challenge == 'true'"),
+  "0-0-start.yml character start jobs must gate on should_start_challenge"
+);
+
 assertInOrder(
   startWorkflow,
   [
@@ -180,6 +227,23 @@ assertInOrder(
   ],
   ".github/workflows/0-0-start.yml closed-issue comment flow"
 );
+
+// 0-1-pick.yml must no longer exist (replaced by auto-character selection in 0-0-start.yml)
+assert.ok(
+  !fs.existsSync(path.join(REPO_ROOT, ".github", "workflows", "0-1-pick.yml")),
+  "0-1-pick.yml must be removed since character selection is now automatic"
+);
+
+// Character-specific issue templates must exist and contain the embedded tag
+for (const char of ["mona", "copilot", "ducky"]) {
+  const templatePath = `.github/steps/0-0-${char}-start.md`;
+  const templateContent = readRepoFile(templatePath);
+  assert.ok(
+    templateContent.includes(`<!-- quest-character: ${char} -->`),
+    `${templatePath} must contain the embedded quest-character tag`
+  );
+  assertRenderedImagesNormalize(templatePath);
+}
 
 assertWorkflowUsesRenderer(".github/workflows/1-1-mona-start.yml", [
   {
