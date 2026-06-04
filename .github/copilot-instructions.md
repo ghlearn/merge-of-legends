@@ -7,7 +7,7 @@ You are working on the Merge of Legends GitHub game. Preserve the quest engine a
 - The game maintains exactly one active quest issue at a time.
 - When a new quest issue is created, the character is chosen automatically (no player interaction needed to pick).
 - A player completes the quest assigned to them, and the game resets by creating the next quest issue.
-- Players can change the character for their next quest by posting `/char mona`, `/char copilot`, or `/char ducky` in the current issue's comments before it closes.
+- Players can switch characters at any time by posting `/char mona`, `/char copilot`, or `/char ducky` as a new comment on the current quest issue. This immediately closes the issue and starts a new quest with the chosen character (handled by `0-2-char-switch.yml`).
 - Finishing a quest must follow this sequence:
   1. success condition is met
   2. finish/tip comments are posted
@@ -33,6 +33,14 @@ Do not break these workflow interfaces unless explicitly asked:
 - Outputs:
   - `issue-url`
 - When invoked after quest completion, it must comment on the closed issue with the link to the next open issue
+
+### `0-2-char-switch.yml`
+
+- Listens for new comments (`issue_comment: created`) on open quest issues
+- When a non-bot user posts `/char mona`, `/char copilot`, or `/char ducky`, it:
+  1. Posts a closing comment acknowledging the switch
+  2. Closes the current issue
+- The `issues: closed` event then triggers `0-0-start.yml`, which reads the `/char` command from the closed issue's comments and starts the new quest
 
 ### `0-1-pick.yml`
 

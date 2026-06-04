@@ -28,4 +28,4 @@ The game will automatically reset when a user finishes.
 4. The computer is assigned a new person to play the game.
 
 > [!TIP]
-> To switch characters for the next quest, post a comment with `/char mona`, `/char copilot`, or `/char ducky` before finishing the current issue.
+> To switch characters, post a comment with `/char mona`, `/char copilot`, or `/char ducky` on the current quest issue. This will close the issue immediately and start a fresh quest with the chosen character.

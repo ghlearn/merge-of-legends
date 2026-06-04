@@ -306,6 +306,7 @@ jobs:
         if: steps.should-run.outputs.should_run == 'true'
         run: |
           gh workflow enable "0-0 Start" || true
+          gh workflow enable "0-2 Char Switch" || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

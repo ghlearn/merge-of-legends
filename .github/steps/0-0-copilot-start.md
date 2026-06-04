@@ -10,6 +10,3 @@ But something's gone wrong. A glitch in version control has caused everything to
 **Copilot**, the Master of Prompting, needs your help to restore the SDLC flow and bring clarity back to the team!
 
 _Your challenge instructions are incoming..._
-
-> [!TIP]
-> You can change the character for your next quest by posting a comment with `/char mona`, `/char copilot`, or `/char ducky`.

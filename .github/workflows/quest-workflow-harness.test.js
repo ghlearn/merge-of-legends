@@ -439,4 +439,55 @@ assertInOrder(
   ".github/workflows/0-bootstrap-readme.yml update_readme job"
 );
 
+// 0-2-char-switch.yml contract: listens for issue_comment: created,
+// detects /char command, posts close comment and closes the issue.
+const charSwitchWorkflowPath = ".github/workflows/0-2-char-switch.yml";
+const charSwitchWorkflow = readRepoFile(charSwitchWorkflowPath);
+
+assert.ok(
+  charSwitchWorkflow.includes("issue_comment:"),
+  "0-2-char-switch.yml must trigger on issue_comment"
+);
+assert.ok(
+  charSwitchWorkflow.includes("types: [created]"),
+  "0-2-char-switch.yml must trigger on created comments only"
+);
+assert.ok(
+  !charSwitchWorkflow.includes("types: [edited]"),
+  "0-2-char-switch.yml must NOT trigger on edited comments"
+);
+assert.ok(
+  charSwitchWorkflow.includes("endsWith(github.actor, '[bot]')"),
+  "0-2-char-switch.yml must ignore bot actors"
+);
+assert.ok(
+  charSwitchWorkflow.includes("startsWith(github.event.issue.title, 'Quest: ')"),
+  "0-2-char-switch.yml must filter to quest issues only"
+);
+assertInOrder(
+  charSwitchWorkflow,
+  [
+    "mona|copilot|ducky",
+    "should_switch",
+    "state: 'closed'",
+  ],
+  "0-2-char-switch.yml char-switch flow"
+);
+
+// 0-0-start.yml must re-enable 0-2 Char Switch so it stays active during quests
+assert.ok(
+  startWorkflow.includes('gh workflow enable "0-2 Char Switch"'),
+  "0-0-start.yml must re-enable 0-2 Char Switch after creating the quest issue"
+);
+
+// Character-specific issue templates must NOT contain the /char tip
+for (const char of ["mona", "copilot", "ducky"]) {
+  const templatePath = `.github/steps/0-0-${char}-start.md`;
+  const content = readRepoFile(templatePath);
+  assert.ok(
+    !content.includes("/char"),
+    `${templatePath} must not contain /char tip in issue body`
+  );
+}
+
 console.log("All tests passed");

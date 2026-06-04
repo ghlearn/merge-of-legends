@@ -10,6 +10,3 @@ But something's gone wrong. A glitch in version control has caused everything to
 **Ducky** has appeared to guide you on the path to software enlightenment — starting with the ancient art of image formatting!
 
 _Your challenge instructions are incoming..._
-
-> [!TIP]
-> You can change the character for your next quest by posting a comment with `/char mona`, `/char copilot`, or `/char ducky`.
