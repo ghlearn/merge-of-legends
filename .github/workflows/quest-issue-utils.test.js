@@ -49,11 +49,11 @@ const { getOpenQuestIssues, planQuestIssueReset, resolveNextCharacter, VALID_CHA
   });
 })();
 
-// resolveNextCharacter: returns 'copilot' as default when no context is provided
+// resolveNextCharacter: returns "copilot" as default when no context is provided
 (() => {
-  assert.strictEqual(resolveNextCharacter(null, []), 'copilot');
-  assert.strictEqual(resolveNextCharacter('', []), 'copilot');
-  assert.strictEqual(resolveNextCharacter(null, null), 'copilot');
+  assert.strictEqual(resolveNextCharacter(null, []), "copilot");
+  assert.strictEqual(resolveNextCharacter("", []), "copilot");
+  assert.strictEqual(resolveNextCharacter(null, null), "copilot");
 })();
 
 // resolveNextCharacter: reads embedded tag from issue body when no /char command is present

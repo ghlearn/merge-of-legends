@@ -8,7 +8,7 @@ But something’s gone wrong. A glitch in version control has caused everything 
 
 The engineering team checked with the top experts and figured out the only way to fix things: find three key resources that can help restore everything back to normal.
 
-If you haven't chosen a character yet, the game starts with :copilot: by default. You can switch to other quests at any time by adding a comment `/char ducky` or `/char mona` <br/>
+Want a different quest guide? Switch at any time by adding a comment `/char ducky` or `/char mona` <br/>
 🐤 **Ducky** or :octocat: **Mona**
 
 Each will grant you a magical gift. When united, they form the **Merge of Legends**, a powerful relic capable of healing corrupted time.
