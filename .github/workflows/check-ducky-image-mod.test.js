@@ -49,6 +49,48 @@ function withGitHubContext({ repository, serverUrl }, callback) {
   assert.deepStrictEqual(cards, [IMAGE_1, IMAGE_2, IMAGE_3]);
 })();
 
+// parseUncoveredCards: extracts three image slots in order (no Character labels)
+(() => {
+  const text = `
+### Image Slots
+- ${IMAGE_1}
+- ${IMAGE_2}
+- ${IMAGE_3}
+`;
+  const cards = parseUncoveredCards(text);
+  assert.deepStrictEqual(cards, [IMAGE_1, IMAGE_2, IMAGE_3]);
+})();
+
+// parseUncoveredCards: ignores <p> wrapper tags around bullet-only slots
+(() => {
+  const text = `
+ ### Image Slots
+ <p align="left">
+ - ${IMAGE_1}
+ - ${IMAGE_2}
+ - ${IMAGE_3}
+ </p>
+ `;
+  const cards = parseUncoveredCards(text);
+  assert.deepStrictEqual(cards, [IMAGE_1, IMAGE_2, IMAGE_3]);
+})();
+
+// parseUncoveredCards: ignores later unrelated bullet lists after slots are parsed
+(() => {
+  const text = `
+### Image Slots
+- ${IMAGE_1}
+- ${IMAGE_2}
+- ${IMAGE_3}
+
+Some other section
+- not a slot
+- also not a slot
+`;
+  const cards = parseUncoveredCards(text);
+  assert.deepStrictEqual(cards, [IMAGE_1, IMAGE_2, IMAGE_3]);
+})();
+
 // parseUncoveredCards: non-string input returns empty array
 (() => {
   assert.deepStrictEqual(parseUncoveredCards(null), []);
