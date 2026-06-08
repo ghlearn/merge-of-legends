@@ -17,6 +17,7 @@ You indeed see as I do. Take the **Goggles of Insight** to guide you.
 
 ---
 
+<!--
 ## Claim Your Prize for Completing this Adventure
 
 Scan the QR code to claim your reward and continue your adventure.
@@ -24,3 +25,4 @@ Scan the QR code to claim your reward and continue your adventure.
 <p align="center">
 <img width="50%" alt="QR Code to claim reward and continue the adventure." src="../images/mol-qrcode.png" />
 </p>
+-->
