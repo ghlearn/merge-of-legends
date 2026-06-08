@@ -93,7 +93,7 @@ function matchRequiredImage(url) {
 function parseUncoveredCards(text) {
   if (typeof text !== "string" || text.length === 0) return [];
 
-  const sectionMatch = text.match(/^###\s*(?:Character|Image)\s*Slots\s*$/im);
+  const sectionMatch = text.match(/^\s*###\s*(?:Character|Image)\s*Slots\s*$/im);
   if (!sectionMatch) return [];
 
   const section = text.slice(sectionMatch.index + sectionMatch[0].length);
