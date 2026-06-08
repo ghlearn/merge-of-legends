@@ -149,7 +149,7 @@ for (const templateFile of stepMarkdownFiles) {
 assertWorkflowUsesRenderer(".github/workflows/0-0-start.yml", [
   {
     buildStepId: "build-issue-description",
-    templateFile: ".github/steps/0-0-${{ steps.determine-character.outputs.character }}-start.md",
+    templateFile: ".github/steps/0-0-start.md",
     bodyReference: "ISSUE_BODY: ${{ steps.build-issue-description.outputs.rendered-text }}",
   },
   {
