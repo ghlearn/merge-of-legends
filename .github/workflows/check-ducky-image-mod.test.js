@@ -53,11 +53,25 @@ function withGitHubContext({ repository, serverUrl }, callback) {
 (() => {
   const text = `
 ### Image Slots
-<p align="left">
 - ${IMAGE_1}
 - ${IMAGE_2}
 - ${IMAGE_3}
-</p>
+`;
+  const cards = parseUncoveredCards(text);
+  assert.deepStrictEqual(cards, [IMAGE_1, IMAGE_2, IMAGE_3]);
+})();
+
+// parseUncoveredCards: ignores later unrelated bullet lists after slots are parsed
+(() => {
+  const text = `
+### Image Slots
+- ${IMAGE_1}
+- ${IMAGE_2}
+- ${IMAGE_3}
+
+Some other section
+- not a slot
+- also not a slot
 `;
   const cards = parseUncoveredCards(text);
   assert.deepStrictEqual(cards, [IMAGE_1, IMAGE_2, IMAGE_3]);

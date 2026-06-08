@@ -21,11 +21,9 @@ Example format for one image:
 `<img width="20%" alt="example-name" src="https://example.com/example.png" />`
 
 ### Image Slots
-<p align="left">
 - PLACE-IMAGE-HERE
 - PLACE-IMAGE-HERE
 - PLACE-IMAGE-HERE
-</p>
 
 <details>
 <summary>Having trouble? 🤷</summary><br/>

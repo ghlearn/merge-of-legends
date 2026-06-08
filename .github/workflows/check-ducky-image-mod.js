@@ -93,17 +93,30 @@ function matchRequiredImage(url) {
 function parseUncoveredCards(text) {
   if (typeof text !== "string" || text.length === 0) return [];
 
-  const sectionMatch = text.match(/###\s*(?:Character|Image)\s*Slots([\s\S]*)/i);
+  const sectionMatch = text.match(/^###\s*(?:Character|Image)\s*Slots\s*$/im);
   if (!sectionMatch) return [];
 
-  const section = sectionMatch[1];
+  const section = text.slice(sectionMatch.index + sectionMatch[0].length);
+  const lines = section.split(/\r?\n/);
   const cards = [];
-  const cardLineRe = /^\s*-\s*(.+)$/gim;
+  let started = false;
 
-  let match;
-  while ((match = cardLineRe.exec(section)) !== null) {
-    const value = match[1].trim().replace(/^Character\s*\d+\s*:\s*/i, "").trim();
-    cards.push(value);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (/^<\/?p\b[^>]*>$/i.test(trimmed)) continue;
+
+    const bulletMatch = trimmed.match(/^-+\s*(.+)$/);
+    if (bulletMatch) {
+      const value = bulletMatch[1].trim().replace(/^Character\s*\d+\s*:\s*/i, "").trim();
+      cards.push(value);
+      started = true;
+      if (cards.length === 3) break;
+      continue;
+    }
+
+    if (started) break;
   }
 
   return cards;
