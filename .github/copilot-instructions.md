@@ -7,7 +7,7 @@ You are working on the Merge of Legends GitHub game. Preserve the quest engine a
 - The game maintains exactly one active quest issue at a time.
 - When a new quest issue is created, the character is chosen automatically (no player interaction needed to pick).
 - A player completes the quest assigned to them, and the game resets by creating the next quest issue.
-- Players can switch characters at any time by posting `/char mona`, `/char copilot`, or `/char ducky` as a new comment on the current quest issue. This immediately closes the issue and starts a new quest with the chosen character (handled by `0-2-char-switch.yml`).
+- Players can switch characters at any time by posting `/char mona`, `/char copilot`, or `/char ducky` as a new comment on the current quest issue. This keeps the issue open, switches the quest path in-place, and starts the selected character flow on that same issue (handled by `0-2-char-switch.yml`).
 - Finishing a quest must follow this sequence:
   1. success condition is met
   2. finish/tip comments are posted
@@ -25,8 +25,8 @@ Do not break these workflow interfaces unless explicitly asked:
 - Determines the next character automatically:
   - Checks closed issue comments for a `/char <name>` command (last non-bot comment wins)
   - Falls back to the `<!-- quest-character: <name> -->` tag embedded in the closed issue body
-  - Falls back to a random character if no context is available (first run)
-- Creates a character-specific issue (body includes `<!-- quest-character: <name> -->`)
+  - Falls back to `copilot` if no context is available (first run)
+- Creates a quest issue from `.github/steps/0-0-start.md` and appends `<!-- quest-character: <name> -->` to the issue body
 - After creating/finding the issue, calls the appropriate start workflow directly as a conditional job
 - Accepts reusable-workflow input:
   - `closed-issue-number`
@@ -38,9 +38,11 @@ Do not break these workflow interfaces unless explicitly asked:
 
 - Listens for new comments (`issue_comment: created`) on open quest issues
 - When a non-bot user posts `/char mona`, `/char copilot`, or `/char ducky`, it:
-  1. Posts a closing comment acknowledging the switch
-  2. Closes the current issue
-- The `issues: closed` event then triggers `0-0-start.yml`, which reads the `/char` command from the closed issue's comments and starts the new quest
+  1. Resets numbered workflows to avoid stale enabled/disabled state
+  2. Updates the current issue's `<!-- quest-character: ... -->` tag in-place
+  3. Posts a switch confirmation comment
+  4. Calls the selected character start workflow (`1-1`, `2-1`, or `3-1`) for the same issue
+- Character switching via `/char` does **not** close the issue
 
 ### `0-1-pick.yml`
 
@@ -127,5 +129,6 @@ Before considering a change complete, verify:
 - the check workflow still detects success correctly
 - quest completion still closes the issue
 - `0-0-start.yml` still comments on the closed issue with the next issue link
+- `/char` switching keeps the same issue open and starts the selected character path in-place
 - the correct character start workflow is called after issue creation
 - the workflow harness and related JS tests still pass

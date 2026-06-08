@@ -454,6 +454,18 @@ assert.ok(
   "0-2-char-switch.yml must trigger on created comments only"
 );
 assert.ok(
+  charSwitchWorkflow.includes("concurrency:"),
+  "0-2-char-switch.yml must declare workflow-level concurrency"
+);
+assert.ok(
+  charSwitchWorkflow.includes("group: quest-char-switch-${{ github.repository }}"),
+  "0-2-char-switch.yml must serialize switch runs with a stable concurrency group"
+);
+assert.ok(
+  charSwitchWorkflow.includes("cancel-in-progress: false"),
+  "0-2-char-switch.yml must not cancel in-progress character switch runs"
+);
+assert.ok(
   !charSwitchWorkflow.includes("types: [edited]"),
   "0-2-char-switch.yml must NOT trigger on edited comments"
 );
