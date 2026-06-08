@@ -16,7 +16,7 @@ jobs:
   switch_character:
     name: Switch Character
     runs-on: ubuntu-latest
-    if: ${{ github.event.issue.state == 'open' && !endsWith(github.actor, '[bot]') && startsWith(github.event.issue.title, 'Quest: ') }}
+    if: "${{ github.event.issue.state == 'open' && !endsWith(github.actor, '[bot]') && startsWith(github.event.issue.title, 'Quest: ') }}"
 
     steps:
       - name: Parse /char command
