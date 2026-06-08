@@ -183,7 +183,7 @@ jobs:
         if: steps.should-run.outputs.should_run == 'true' && steps.existing-open-issue.outputs.has_open_issue != 'true'
         uses: ./.github/actions/render-markdown-template
         with:
-          template-file: .github/steps/0-0-${{ steps.determine-character.outputs.character }}-start.md
+          template-file: .github/steps/0-0-start.md
           repo-image-base-url: ${{ github.server_url }}/${{ github.repository }}/raw/${{ github.event.repository.default_branch }}/.github/images
 
       - name: Create issue
@@ -195,12 +195,16 @@ jobs:
             // Show repo where issue will be created
             console.log(`Creating issue in repository:${ context.repo.owner }/${ context.repo.repo }`);
 
+            // Append quest-character tag so resolveNextCharacter can identify the character on future runs
+            const character = process.env.CHARACTER || 'copilot';
+            const body = `${process.env.ISSUE_BODY}\n\n<!-- quest-character: ${character} -->`;
+
             // Create the issue
             const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `${process.env.ISSUE_TITLE_PREFIX}${process.env.EXERCISE_TITLE}`,
-              body: process.env.ISSUE_BODY
+              body
             });
 
             // Return the location
@@ -211,6 +215,7 @@ jobs:
           ISSUE_BODY: ${{ steps.build-issue-description.outputs.rendered-text }}
           EXERCISE_TITLE: ${{ env.EXERCISE_TITLE }}
           ISSUE_TITLE_PREFIX: ${{ env.ISSUE_TITLE_PREFIX }}
+          CHARACTER: ${{ steps.determine-character.outputs.character }}
 
       - name: Set next issue URL
         id: set-next-issue-url

@@ -49,12 +49,11 @@ const { getOpenQuestIssues, planQuestIssueReset, resolveNextCharacter, VALID_CHA
   });
 })();
 
-// resolveNextCharacter: returns a valid character at random when no context is provided
+// resolveNextCharacter: returns "copilot" as default when no context is provided
 (() => {
-  for (let i = 0; i < 20; i++) {
-    const result = resolveNextCharacter(null, []);
-    assert.ok(VALID_CHARACTERS.includes(result), `Random result '${result}' must be a valid character`);
-  }
+  assert.strictEqual(resolveNextCharacter(null, []), "copilot");
+  assert.strictEqual(resolveNextCharacter("", []), "copilot");
+  assert.strictEqual(resolveNextCharacter(null, null), "copilot");
 })();
 
 // resolveNextCharacter: reads embedded tag from issue body when no /char command is present

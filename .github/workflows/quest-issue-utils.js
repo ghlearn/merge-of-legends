@@ -6,7 +6,7 @@ const VALID_CHARACTERS = ["mona", "copilot", "ducky"];
  * Resolution order:
  *  1. Last `/char <name>` command in comments by a non-bot user.
  *  2. Embedded `<!-- quest-character: <name> -->` tag in the issue body.
- *  3. Random selection when neither is present (first run or untagged issue).
+ *  3. Default: copilot (first run or untagged issue with no /char command).
  *
  * @param {string|null} closedIssueBody - Body of the closed issue, or null.
  * @param {Array<{body: string, user: {login: string}}>} closedIssueComments - Comments on the closed issue.
@@ -34,8 +34,8 @@ function resolveNextCharacter(closedIssueBody, closedIssueComments) {
   );
   if (bodyMatch) return bodyMatch[1].toLowerCase();
 
-  // Default: random pick (first run or untagged issue)
-  return VALID_CHARACTERS[Math.floor(Math.random() * VALID_CHARACTERS.length)];
+  // Default: copilot (first run or untagged issue with no /char command)
+  return "copilot";
 }
 
 function getOpenQuestIssues(issues, titlePrefix = "Quest: ") {
