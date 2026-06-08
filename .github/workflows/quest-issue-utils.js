@@ -35,7 +35,7 @@ function resolveNextCharacter(closedIssueBody, closedIssueComments) {
   if (bodyMatch) return bodyMatch[1].toLowerCase();
 
   // Default: copilot (first run or untagged issue with no /char command)
-  return 'copilot';
+  return "copilot";
 }
 
 function getOpenQuestIssues(issues, titlePrefix = "Quest: ") {
