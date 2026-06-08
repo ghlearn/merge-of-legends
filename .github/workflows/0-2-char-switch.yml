@@ -89,9 +89,9 @@ jobs:
             const currentBody = process.env.ISSUE_BODY || '';
             const characterTag = `<!-- quest-character: ${character} -->`;
             const tagPattern = /<!--\s*quest-character:\s*(mona|copilot|ducky)\s*-->/i;
-            const nextBody = tagPattern.test(currentBody)
-              ? currentBody.replace(tagPattern, characterTag)
-              : `${currentBody}\n\n${characterTag}`.trim();
+const nextBody = tagPattern.test(currentBody)
+  ? currentBody.replace(tagPattern, characterTag)
+  : (currentBody ? `${currentBody}\n\n${characterTag}` : characterTag);
 
             await github.rest.issues.update({
               owner: context.repo.owner,
