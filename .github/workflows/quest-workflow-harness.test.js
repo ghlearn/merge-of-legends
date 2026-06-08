@@ -440,7 +440,8 @@ assertInOrder(
 );
 
 // 0-2-char-switch.yml contract: listens for issue_comment: created,
-// detects /char command, posts close comment and closes the issue.
+// detects /char command, switches quest path in-place (same issue),
+// and starts the selected character challenge flow.
 const charSwitchWorkflowPath = ".github/workflows/0-2-char-switch.yml";
 const charSwitchWorkflow = readRepoFile(charSwitchWorkflowPath);
 
@@ -464,12 +465,32 @@ assert.ok(
   charSwitchWorkflow.includes("startsWith(github.event.issue.title, 'Quest: ')"),
   "0-2-char-switch.yml must filter to quest issues only"
 );
+assert.ok(
+  !charSwitchWorkflow.includes("state: 'closed'"),
+  "0-2-char-switch.yml must not close the issue during character switch"
+);
+assert.ok(
+  charSwitchWorkflow.includes("name: Switch character in-place"),
+  "0-2-char-switch.yml must switch the existing issue in-place"
+);
+assert.ok(
+  charSwitchWorkflow.includes("name: Disable all exercise workflows"),
+  "0-2-char-switch.yml must reset workflow state before switching paths"
+);
+for (const char of ["mona", "copilot", "ducky"]) {
+  assert.ok(
+    charSwitchWorkflow.includes(`uses: ./.github/workflows/${char === "mona" ? "1" : char === "copilot" ? "2" : "3"}-1-${char}-start.yml`),
+    `0-2-char-switch.yml must call ${char} start workflow`
+  );
+}
 assertInOrder(
   charSwitchWorkflow,
   [
     "mona|copilot|ducky",
     "should_switch",
-    "state: 'closed'",
+    "name: Disable all exercise workflows",
+    "name: Switch character in-place",
+    "mona_start:",
   ],
   "0-2-char-switch.yml char-switch flow"
 );

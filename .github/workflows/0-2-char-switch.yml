@@ -13,10 +13,14 @@ env:
   ISSUE_TITLE_PREFIX: "Quest: "
 
 jobs:
-  switch_character:
-    name: Switch Character
+  parse_switch:
+    name: Parse Character Switch Command
     runs-on: ubuntu-latest
     if: "${{ github.event.issue.state == 'open' && !endsWith(github.actor, '[bot]') && startsWith(github.event.issue.title, 'Quest: ') }}"
+    outputs:
+      should_switch: ${{ steps.parse-command.outputs.should_switch }}
+      character: ${{ steps.parse-command.outputs.character }}
+      issue_number: ${{ steps.parse-command.outputs.issue_number }}
 
     steps:
       - name: Parse /char command
@@ -37,31 +41,97 @@ jobs:
             core.info(`/char command found: ${character}`);
             core.setOutput('should_switch', 'true');
             core.setOutput('character', character);
+            core.setOutput('issue_number', String(context.payload.issue.number));
 
-      - name: Post close comment and close issue
-        if: steps.parse-command.outputs.should_switch == 'true'
+  reset_workflows:
+    name: Reset Workflow State
+    needs: parse_switch
+    if: needs.parse_switch.outputs.should_switch == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Disable all exercise workflows
+        run: |
+          workflows=$(git ls-files | grep -E '^\.github/workflows/[0-9].*\.(yml|yaml)$')
+          for workflow in $workflows; do
+            workflow_name="$(basename "$workflow")"
+            echo "Disabling workflow: $workflow_name"
+            gh workflow disable "$workflow_name" || true
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-enable core switch/start workflows
+        run: |
+          gh workflow enable "0-0 Start" || true
+          gh workflow enable "0-2 Char Switch" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  switch_character_in_place:
+    name: Switch Character In-Place
+    needs: parse_switch
+    if: needs.parse_switch.outputs.should_switch == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Switch character in-place
         uses: actions/github-script@v7
         env:
-          CHARACTER: ${{ steps.parse-command.outputs.character }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          CHARACTER: ${{ needs.parse_switch.outputs.character }}
+          ISSUE_NUMBER: ${{ needs.parse_switch.outputs.issue_number }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
         with:
           script: |
             const character = process.env.CHARACTER;
             const issueNumber = Number(process.env.ISSUE_NUMBER);
             const displayName = { mona: 'Mona', copilot: 'Copilot', ducky: 'Ducky' }[character];
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: `⚔️ Switching to **${displayName}** for your next quest! Closing this one now...`
-            });
+            const currentBody = process.env.ISSUE_BODY || '';
+            const characterTag = `<!-- quest-character: ${character} -->`;
+            const tagPattern = /<!--\s*quest-character:\s*(mona|copilot|ducky)\s*-->/i;
+            const nextBody = tagPattern.test(currentBody)
+              ? currentBody.replace(tagPattern, characterTag)
+              : `${currentBody}\n\n${characterTag}`.trim();
 
             await github.rest.issues.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              state: 'closed'
+              body: nextBody
             });
 
-            core.info(`Issue #${issueNumber} closed. Next quest will feature ${displayName}.`);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `⚔️ Switching to **${displayName}** for this quest issue. Loading the ${displayName} quest path now...`
+            });
+
+            core.info(`Issue #${issueNumber} switched in-place to ${displayName}.`);
+
+  mona_start:
+    name: Start Mona challenge
+    needs: [parse_switch, reset_workflows, switch_character_in_place]
+    if: needs.parse_switch.outputs.character == 'mona' && needs.parse_switch.outputs.should_switch == 'true'
+    uses: ./.github/workflows/1-1-mona-start.yml
+    with:
+      issue-number: ${{ fromJson(needs.parse_switch.outputs.issue_number) }}
+    secrets: inherit
+
+  copilot_start:
+    name: Start Copilot challenge
+    needs: [parse_switch, reset_workflows, switch_character_in_place]
+    if: needs.parse_switch.outputs.character == 'copilot' && needs.parse_switch.outputs.should_switch == 'true'
+    uses: ./.github/workflows/2-1-copilot-start.yml
+    with:
+      issue-number: ${{ fromJson(needs.parse_switch.outputs.issue_number) }}
+    secrets: inherit
+
+  ducky_start:
+    name: Start Ducky challenge
+    needs: [parse_switch, reset_workflows, switch_character_in_place]
+    if: needs.parse_switch.outputs.character == 'ducky' && needs.parse_switch.outputs.should_switch == 'true'
+    uses: ./.github/workflows/3-1-ducky-start.yml
+    with:
+      issue-number: ${{ fromJson(needs.parse_switch.outputs.issue_number) }}
+    secrets: inherit
