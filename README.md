@@ -4,7 +4,7 @@
 
 Save the land of Codia and restore the sacred Mainline with the help of three mythical creatures and their gifts.
 
-- Pick one of three journeys (Ducky, Mona, Copilot).
+- The game assigns you a journey (Ducky, Mona, or Copilot).
 - Solve mini challenges (about 5 minutes).
 - Combine powers and save the world.
 
@@ -26,3 +26,6 @@ The game will automatically reset when a user finishes.
 2. A workflow ensures there is exactly one open quest issue and links it in a comment on the closed issue.
 3. A moderator navigates to the **Issues** tab and opens the new issue.
 4. The computer is assigned a new person to play the game.
+
+> [!TIP]
+> To switch characters, post a comment with `/char mona`, `/char copilot`, or `/char ducky` on the current quest issue. This will close the issue immediately and start a fresh quest with the chosen character.

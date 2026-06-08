@@ -17,6 +17,10 @@ on:
   issues:
     types: [closed]
 
+concurrency:
+  group: quest-start-${{ github.repository }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   actions: write
@@ -32,6 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       issue_url: ${{ steps.set-next-issue-url.outputs.issue_url }}
+      issue_number: ${{ steps.set-issue-number.outputs.issue_number }}
+      character: ${{ steps.determine-character.outputs.character }}
+      should_run: ${{ steps.should-run.outputs.should_run }}
+      should_start_challenge: ${{ steps.set-should-start.outputs.should_start_challenge }}
 
     steps:
       - name: Decide whether to run quest flow
@@ -58,42 +66,104 @@ jobs:
         if: steps.should-run.outputs.should_run == 'true'
         uses: actions/checkout@v5
 
+      - name: Determine next character
+        id: determine-character
+        if: steps.should-run.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        env:
+          INPUT_CLOSED_ISSUE_NUMBER: ${{ inputs['closed-issue-number'] }}
+        with:
+          script: |
+            const { resolveNextCharacter } = require('./.github/workflows/quest-issue-utils');
+
+            const fromInput = (process.env.INPUT_CLOSED_ISSUE_NUMBER || '').toString().trim();
+            const eventIssueNumber =
+              context.eventName === 'issues' && context.payload.issue
+                ? String(context.payload.issue.number)
+                : '';
+            const closedIssueNumber = fromInput || eventIssueNumber || '';
+
+            let closedIssueBody = null;
+            let comments = [];
+
+            if (closedIssueNumber) {
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: Number(closedIssueNumber)
+              });
+              closedIssueBody = issue.body;
+              comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: Number(closedIssueNumber)
+              });
+            }
+
+            const character = resolveNextCharacter(closedIssueBody, comments);
+            core.info(`Next character: ${character}`);
+            core.setOutput('character', character);
+
       - name: Check for existing open quest issue
         id: existing-open-issue
         if: steps.should-run.outputs.should_run == 'true'
         uses: actions/github-script@v7
+        env:
+          EXERCISE_TITLE: ${{ env.EXERCISE_TITLE }}
+          ISSUE_TITLE_PREFIX: ${{ env.ISSUE_TITLE_PREFIX }}
+          TARGET_CHARACTER: ${{ steps.determine-character.outputs.character }}
         with:
           script: |
             const expectedTitle = `${process.env.ISSUE_TITLE_PREFIX}${process.env.EXERCISE_TITLE}`;
+            const targetCharacter = process.env.TARGET_CHARACTER;
+
             const issues = await github.paginate(github.rest.issues.listForRepo, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open'
             });
-            const matchingIssues = issues.filter(issue => !issue.pull_request && issue.title === expectedTitle);
-            const existingIssue = matchingIssues[0];
+            const questIssues = issues.filter(issue => !issue.pull_request && issue.title === expectedTitle);
 
-            for (const duplicateIssue of matchingIssues.slice(1)) {
-              await github.rest.issues.update({
+            // Annotate each issue with its embedded character tag
+            for (const issue of questIssues) {
+              const match = (issue.body || '').match(/<!--\s*quest-character:\s*(mona|copilot|ducky)\s*-->/i);
+              issue._character = match ? match[1].toLowerCase() : null;
+            }
+
+            // Find a quest issue that matches the target character
+            const matchingIssue = questIssues.find(i => i._character === targetCharacter);
+
+            // Close all non-matching quest issues (wrong character or stale duplicates)
+            for (const issue of questIssues) {
+              if (issue !== matchingIssue) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed'
+                });
+                core.info(`Closed non-matching open quest issue #${issue.number} (character: ${issue._character})`);
+              }
+            }
+
+            if (matchingIssue) {
+              core.info(`Open quest issue for ${targetCharacter} already exists: #${matchingIssue.number}`);
+              core.setOutput('has_open_issue', 'true');
+              core.setOutput('issue_url', matchingIssue.html_url);
+              core.setOutput('issue_number', matchingIssue.number.toString());
+
+              // Detect whether the challenge has been started (any comments posted)
+              const comments = await github.paginate(github.rest.issues.listComments, {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: duplicateIssue.number,
-                state: 'closed'
+                issue_number: matchingIssue.number
               });
-              core.info(`Closed duplicate open quest issue #${duplicateIssue.number}`);
-            }
-
-            if (existingIssue) {
-              core.info(`Open quest issue already exists: #${existingIssue.number}`);
-              core.setOutput('has_open_issue', 'true');
-              core.setOutput('issue_url', existingIssue.html_url);
-              core.setOutput('issue_number', existingIssue.number.toString());
+              core.setOutput('has_challenge_started', comments.length > 0 ? 'true' : 'false');
+              core.info(`Challenge started: ${comments.length > 0}`);
             } else {
               core.setOutput('has_open_issue', 'false');
+              core.setOutput('has_challenge_started', 'false');
             }
-        env:
-          EXERCISE_TITLE: ${{ env.EXERCISE_TITLE }}
-          ISSUE_TITLE_PREFIX: ${{ env.ISSUE_TITLE_PREFIX }}
 
       - name: Disable all exercise workflows
         if: steps.should-run.outputs.should_run == 'true'
@@ -110,10 +180,10 @@ jobs:
 
       - name: Build issue description
         id: build-issue-description
-        if: steps.should-run.outputs.should_run == 'true'
+        if: steps.should-run.outputs.should_run == 'true' && steps.existing-open-issue.outputs.has_open_issue != 'true'
         uses: ./.github/actions/render-markdown-template
         with:
-          template-file: .github/steps/0-0-start.md
+          template-file: .github/steps/0-0-${{ steps.determine-character.outputs.character }}-start.md
           repo-image-base-url: ${{ github.server_url }}/${{ github.repository }}/raw/${{ github.event.repository.default_branch }}/.github/images
 
       - name: Create issue
@@ -152,6 +222,34 @@ jobs:
         with:
           script: |
             core.setOutput('issue_url', process.env.EXISTING_ISSUE_URL || process.env.CREATED_ISSUE_URL || '');
+
+      - name: Set issue number
+        id: set-issue-number
+        if: steps.should-run.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        env:
+          EXISTING_ISSUE_NUMBER: ${{ steps.existing-open-issue.outputs.issue_number }}
+          CREATED_ISSUE_NUMBER: ${{ steps.create-issue.outputs.issue_number }}
+        with:
+          script: |
+            core.setOutput('issue_number', process.env.EXISTING_ISSUE_NUMBER || process.env.CREATED_ISSUE_NUMBER || '');
+
+      - name: Set should-start-challenge
+        id: set-should-start
+        if: steps.should-run.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        env:
+          HAS_OPEN_ISSUE: ${{ steps.existing-open-issue.outputs.has_open_issue }}
+          HAS_CHALLENGE_STARTED: ${{ steps.existing-open-issue.outputs.has_challenge_started }}
+          CREATED_ISSUE_NUMBER: ${{ steps.create-issue.outputs.issue_number }}
+        with:
+          script: |
+            const isNewIssue = (process.env.CREATED_ISSUE_NUMBER || '') !== '';
+            const isReusedUnstarted =
+              process.env.HAS_OPEN_ISSUE === 'true' && process.env.HAS_CHALLENGE_STARTED !== 'true';
+            const shouldStart = isNewIssue || isReusedUnstarted;
+            core.setOutput('should_start_challenge', shouldStart.toString());
+            core.info(`New issue: ${isNewIssue}, Reused unstarted: ${isReusedUnstarted}, Should start: ${shouldStart}`);
 
       - name: Set closed issue number
         id: set-closed-issue-number
@@ -204,10 +302,37 @@ jobs:
               body: process.env.COMMENT_BODY
             });
 
-      - name: Reenable to allow restarting, and enable challenge picker workflow.
+      - name: Reenable to allow restarting
         if: steps.should-run.outputs.should_run == 'true'
         run: |
           gh workflow enable "0-0 Start" || true
-          gh workflow enable "0-1 Pick" || true
+          gh workflow enable "0-2 Char Switch" || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  mona_start:
+    name: Start Mona challenge
+    needs: start_exercise
+    if: needs.start_exercise.outputs.character == 'mona' && needs.start_exercise.outputs.should_run == 'true' && needs.start_exercise.outputs.should_start_challenge == 'true'
+    uses: ./.github/workflows/1-1-mona-start.yml
+    with:
+      issue-number: ${{ fromJson(needs.start_exercise.outputs.issue_number) }}
+    secrets: inherit
+
+  copilot_start:
+    name: Start Copilot challenge
+    needs: start_exercise
+    if: needs.start_exercise.outputs.character == 'copilot' && needs.start_exercise.outputs.should_run == 'true' && needs.start_exercise.outputs.should_start_challenge == 'true'
+    uses: ./.github/workflows/2-1-copilot-start.yml
+    with:
+      issue-number: ${{ fromJson(needs.start_exercise.outputs.issue_number) }}
+    secrets: inherit
+
+  ducky_start:
+    name: Start Ducky challenge
+    needs: start_exercise
+    if: needs.start_exercise.outputs.character == 'ducky' && needs.start_exercise.outputs.should_run == 'true' && needs.start_exercise.outputs.should_start_challenge == 'true'
+    uses: ./.github/workflows/3-1-ducky-start.yml
+    with:
+      issue-number: ${{ fromJson(needs.start_exercise.outputs.issue_number) }}
+    secrets: inherit

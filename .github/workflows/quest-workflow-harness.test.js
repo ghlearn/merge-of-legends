@@ -149,7 +149,7 @@ for (const templateFile of stepMarkdownFiles) {
 assertWorkflowUsesRenderer(".github/workflows/0-0-start.yml", [
   {
     buildStepId: "build-issue-description",
-    templateFile: ".github/steps/0-0-start.md",
+    templateFile: ".github/steps/0-0-${{ steps.determine-character.outputs.character }}-start.md",
     bodyReference: "ISSUE_BODY: ${{ steps.build-issue-description.outputs.rendered-text }}",
   },
   {
@@ -166,6 +166,53 @@ assert.ok(
 );
 
 const startWorkflow = readRepoFile(".github/workflows/0-0-start.yml");
+
+// Character determination must appear before issue creation
+assertInOrder(
+  startWorkflow,
+  [
+    "name: Determine next character",
+    "id: determine-character",
+    "resolveNextCharacter",
+    "id: existing-open-issue",
+    "TARGET_CHARACTER",
+    "id: build-issue-description",
+    "id: create-issue",
+  ],
+  ".github/workflows/0-0-start.yml character determination flow"
+);
+
+// Conditional start workflow jobs must exist for all three characters
+assert.ok(
+  startWorkflow.includes("mona_start:"),
+  "0-0-start.yml must have a mona_start job"
+);
+assert.ok(
+  startWorkflow.includes("copilot_start:"),
+  "0-0-start.yml must have a copilot_start job"
+);
+assert.ok(
+  startWorkflow.includes("ducky_start:"),
+  "0-0-start.yml must have a ducky_start job"
+);
+
+// Each character start job must gate on character, should_run, and should_start_challenge
+for (const char of ["mona", "copilot", "ducky"]) {
+  assert.ok(
+    startWorkflow.includes(`outputs.character == '${char}'`),
+    `0-0-start.yml ${char}_start job must check character output`
+  );
+  assert.ok(
+    startWorkflow.includes(`uses: ./.github/workflows/${char === "mona" ? "1" : char === "copilot" ? "2" : "3"}-1-${char}-start.yml`),
+    `0-0-start.yml must call ${char} start workflow`
+  );
+}
+
+assert.ok(
+  startWorkflow.includes("should_start_challenge == 'true'"),
+  "0-0-start.yml character start jobs must gate on should_start_challenge"
+);
+
 assertInOrder(
   startWorkflow,
   [
@@ -180,6 +227,23 @@ assertInOrder(
   ],
   ".github/workflows/0-0-start.yml closed-issue comment flow"
 );
+
+// 0-1-pick.yml must no longer exist (replaced by auto-character selection in 0-0-start.yml)
+assert.ok(
+  !fs.existsSync(path.join(REPO_ROOT, ".github", "workflows", "0-1-pick.yml")),
+  "0-1-pick.yml must be removed since character selection is now automatic"
+);
+
+// Character-specific issue templates must exist and contain the embedded tag
+for (const char of ["mona", "copilot", "ducky"]) {
+  const templatePath = `.github/steps/0-0-${char}-start.md`;
+  const templateContent = readRepoFile(templatePath);
+  assert.ok(
+    templateContent.includes(`<!-- quest-character: ${char} -->`),
+    `${templatePath} must contain the embedded quest-character tag`
+  );
+  assertRenderedImagesNormalize(templatePath);
+}
 
 assertWorkflowUsesRenderer(".github/workflows/1-1-mona-start.yml", [
   {
@@ -374,5 +438,56 @@ assertInOrder(
   ],
   ".github/workflows/0-bootstrap-readme.yml update_readme job"
 );
+
+// 0-2-char-switch.yml contract: listens for issue_comment: created,
+// detects /char command, posts close comment and closes the issue.
+const charSwitchWorkflowPath = ".github/workflows/0-2-char-switch.yml";
+const charSwitchWorkflow = readRepoFile(charSwitchWorkflowPath);
+
+assert.ok(
+  charSwitchWorkflow.includes("issue_comment:"),
+  "0-2-char-switch.yml must trigger on issue_comment"
+);
+assert.ok(
+  charSwitchWorkflow.includes("types: [created]"),
+  "0-2-char-switch.yml must trigger on created comments only"
+);
+assert.ok(
+  !charSwitchWorkflow.includes("types: [edited]"),
+  "0-2-char-switch.yml must NOT trigger on edited comments"
+);
+assert.ok(
+  charSwitchWorkflow.includes("endsWith(github.actor, '[bot]')"),
+  "0-2-char-switch.yml must ignore bot actors"
+);
+assert.ok(
+  charSwitchWorkflow.includes("startsWith(github.event.issue.title, 'Quest: ')"),
+  "0-2-char-switch.yml must filter to quest issues only"
+);
+assertInOrder(
+  charSwitchWorkflow,
+  [
+    "mona|copilot|ducky",
+    "should_switch",
+    "state: 'closed'",
+  ],
+  "0-2-char-switch.yml char-switch flow"
+);
+
+// 0-0-start.yml must re-enable 0-2 Char Switch so it stays active during quests
+assert.ok(
+  startWorkflow.includes('gh workflow enable "0-2 Char Switch"'),
+  "0-0-start.yml must re-enable 0-2 Char Switch after creating the quest issue"
+);
+
+// Character-specific issue templates must NOT contain the /char tip
+for (const char of ["mona", "copilot", "ducky"]) {
+  const templatePath = `.github/steps/0-0-${char}-start.md`;
+  const content = readRepoFile(templatePath);
+  assert.ok(
+    !content.includes("/char"),
+    `${templatePath} must not contain /char tip in issue body`
+  );
+}
 
 console.log("All tests passed");

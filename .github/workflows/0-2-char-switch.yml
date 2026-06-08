@@ -1,0 +1,67 @@
+name: 0-2 Char Switch
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+env:
+  ISSUE_TITLE_PREFIX: "Quest: "
+
+jobs:
+  switch_character:
+    name: Switch Character
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.state == 'open' && !endsWith(github.actor, '[bot]') && startsWith(github.event.issue.title, 'Quest: ') }}
+
+    steps:
+      - name: Parse /char command
+        id: parse-command
+        uses: actions/github-script@v7
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        with:
+          script: |
+            const body = process.env.COMMENT_BODY || '';
+            const match = body.match(/\/char\s+(mona|copilot|ducky)\b/i);
+            if (!match) {
+              core.info('No /char command found in comment.');
+              core.setOutput('should_switch', 'false');
+              return;
+            }
+            const character = match[1].toLowerCase();
+            core.info(`/char command found: ${character}`);
+            core.setOutput('should_switch', 'true');
+            core.setOutput('character', character);
+
+      - name: Post close comment and close issue
+        if: steps.parse-command.outputs.should_switch == 'true'
+        uses: actions/github-script@v7
+        env:
+          CHARACTER: ${{ steps.parse-command.outputs.character }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        with:
+          script: |
+            const character = process.env.CHARACTER;
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+            const displayName = { mona: 'Mona', copilot: 'Copilot', ducky: 'Ducky' }[character];
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `⚔️ Switching to **${displayName}** for your next quest! Closing this one now...`
+            });
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              state: 'closed'
+            });
+
+            core.info(`Issue #${issueNumber} closed. Next quest will feature ${displayName}.`);

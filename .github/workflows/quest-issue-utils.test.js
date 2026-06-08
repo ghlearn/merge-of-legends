@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { getOpenQuestIssues, planQuestIssueReset } = require("./quest-issue-utils");
+const { getOpenQuestIssues, planQuestIssueReset, resolveNextCharacter, VALID_CHARACTERS } = require("./quest-issue-utils");
 
 // getOpenQuestIssues: empty or invalid input returns empty array
 (() => {
@@ -47,6 +47,75 @@ const { getOpenQuestIssues, planQuestIssueReset } = require("./quest-issue-utils
     issueUrl: "https://example.com/5",
     duplicateIssueNumbers: ["9", "12"],
   });
+})();
+
+// resolveNextCharacter: returns a valid character at random when no context is provided
+(() => {
+  for (let i = 0; i < 20; i++) {
+    const result = resolveNextCharacter(null, []);
+    assert.ok(VALID_CHARACTERS.includes(result), `Random result '${result}' must be a valid character`);
+  }
+})();
+
+// resolveNextCharacter: reads embedded tag from issue body when no /char command is present
+(() => {
+  const body = "Some text\n<!-- quest-character: copilot -->\nMore text";
+  assert.strictEqual(resolveNextCharacter(body, []), "copilot");
+})();
+
+// resolveNextCharacter: reads /char command from a comment, overriding body tag
+(() => {
+  const body = "<!-- quest-character: mona -->";
+  const comments = [{ body: "/char ducky", user: { login: "player" } }];
+  assert.strictEqual(resolveNextCharacter(body, comments), "ducky");
+})();
+
+// resolveNextCharacter: last /char command wins across multiple comments
+(() => {
+  const comments = [
+    { body: "/char mona", user: { login: "player" } },
+    { body: "working on it", user: { login: "player" } },
+    { body: "/char copilot", user: { login: "player" } },
+  ];
+  assert.strictEqual(resolveNextCharacter(null, comments), "copilot");
+})();
+
+// resolveNextCharacter: last /char command wins within a single comment
+(() => {
+  const comments = [
+    { body: "I want /char mona but actually /char ducky", user: { login: "player" } },
+  ];
+  assert.strictEqual(resolveNextCharacter(null, comments), "ducky");
+})();
+
+// resolveNextCharacter: /char commands from bots are ignored
+(() => {
+  const body = "<!-- quest-character: mona -->";
+  const comments = [
+    { body: "/char copilot", user: { login: "github-actions[bot]" } },
+    { body: "/char ducky", user: { login: "some-bot[bot]" } },
+  ];
+  assert.strictEqual(resolveNextCharacter(body, comments), "mona");
+})();
+
+// resolveNextCharacter: command matching is case-insensitive
+(() => {
+  const comments = [{ body: "/char COPILOT", user: { login: "player" } }];
+  assert.strictEqual(resolveNextCharacter(null, comments), "copilot");
+})();
+
+// resolveNextCharacter: requires word boundary (no partial matches like /char monasmith)
+(() => {
+  const comments = [{ body: "/char monasmith", user: { login: "player" } }];
+  // No valid match; falls back to body tag
+  const body = "<!-- quest-character: ducky -->";
+  assert.strictEqual(resolveNextCharacter(body, comments), "ducky");
+})();
+
+// resolveNextCharacter: null comments array is tolerated
+(() => {
+  const body = "<!-- quest-character: mona -->";
+  assert.strictEqual(resolveNextCharacter(body, null), "mona");
 })();
 
 console.log("All tests passed");
