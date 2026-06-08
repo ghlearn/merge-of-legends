@@ -4,7 +4,7 @@
 
 Shape the three guides into view.
 
-**Edit this comment** by replacing each `HIDDEN` value in the **Character Slots** list below with a single HTML image tag using:
+**Edit this comment** by replacing each `PLACE-IMAGE-HERE` bullet in the **Image Slots** list below with a single HTML image tag using:
 
 - `width="20%"`
 - `alt="ducky"`, `alt="mona"`, and `alt="copilot"`
@@ -20,11 +20,12 @@ Example format for one image:
 
 `<img width="20%" alt="example-name" src="https://example.com/example.png" />`
 
-### Character Slots
-
-- Character 1: PLACE-IMAGE-HERE
-- Character 2: PLACE-IMAGE-HERE
-- Character 3: PLACE-IMAGE-HERE
+### Image Slots
+<p align="left">
+- PLACE-IMAGE-HERE
+- PLACE-IMAGE-HERE
+- PLACE-IMAGE-HERE
+</p>
 
 <details>
 <summary>Having trouble? 🤷</summary><br/>
