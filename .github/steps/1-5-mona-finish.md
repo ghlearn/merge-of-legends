@@ -15,6 +15,7 @@ Donuts glitter where merges once failed...
 
 ---
 
+<!--
 ## Claim Your Prize for Completing this Adventure
 
 Scan the QR code to claim your reward and continue your adventure.
@@ -22,3 +23,4 @@ Scan the QR code to claim your reward and continue your adventure.
 <p align="center">
 <img width="50%" alt="QR Code to claim reward and continue the adventure." src="../images/mol-qrcode.png" />
 </p>
+-->
